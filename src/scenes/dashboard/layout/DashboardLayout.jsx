@@ -8,15 +8,12 @@ export const DashboardLayout = ({ children }) => {
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: colors.grey[100] }}>
-      {/* Sidebar fijo a la izquierda */}
       <Sidebar />
 
-      {/* Área principal de contenido */}
       <Box sx={{ flexGrow: 1 }}>
         {/* Topbar */}
         <Topbar />
 
-        {/* Contenido de la página específica */}
         <Box
           m="20px"
           sx={{

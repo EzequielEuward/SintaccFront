@@ -3,8 +3,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { Alert, Button, Grid, Link, TextField, Typography } from '@mui/material';
 import { AuthLayout } from '../layout/AuthLayout';
-import { useForm } from '../../hook/';
-import { startCreatingUserWithEmailPassword } from '../../store/auth/thunks';
+import { useForm } from '../../hook/'; // Ajusta la ruta según corresponda
+import { startCreatingUserWithEmailPassword } from '../../store/auth/thunks'; // Ajusta la ruta según corresponda
 
 const formData = {
   dni: '',
@@ -12,7 +12,10 @@ const formData = {
   nombre: '',
   fechaNacimiento: '',
   sexoBiologico: '',
-  email: ''
+  email: '',
+  username: '',
+  userPassword: '',
+  rol: ''
 };
 
 const formValidations = {
@@ -22,6 +25,9 @@ const formValidations = {
   fechaNacimiento: [(value) => value.length > 0, 'Fecha de nacimiento es obligatoria.'],
   sexoBiologico: [(value) => value.length > 0, 'Sexo biológico es obligatorio.'],
   email: [(value) => value.includes('@'), 'El correo debe de tener una @'],
+  username: [(value) => value.length > 0, 'El nombre de usuario es obligatorio.'],
+  userPassword: [(value) => value.length >= 6, 'La contraseña debe tener al menos 6 caracteres.'],
+  rol: [(value) => value.length > 0, 'El rol es obligatorio.']
 };
 
 export const RegisterPage = () => {
@@ -33,8 +39,9 @@ export const RegisterPage = () => {
   const isCheckingAuthentication = useMemo(() => status === 'checking', [status]);
 
   const {
-    formState, dni, apellido, nombre, fechaNacimiento, sexoBiologico, email,
-    onInputChange, isFormValid, dniValid, apellidoValid, nombreValid, fechaNacimientoValid, sexoBiologicoValid, emailValid
+    formState, dni, apellido, nombre, fechaNacimiento, sexoBiologico, email, username, userPassword, rol,
+    onInputChange, isFormValid, dniValid, apellidoValid, nombreValid, fechaNacimientoValid, sexoBiologicoValid, emailValid,
+    usernameValid, userPasswordValid, rolValid
   } = useForm(formData, formValidations);
 
   const onSubmit = async (event) => {
@@ -50,7 +57,10 @@ export const RegisterPage = () => {
         nombre,
         fechaNacimiento,
         sexoBiologico,
-        email
+        email,
+        username,
+        userPassword,
+        rol
       }));
       navigate('/auth/login');
     } catch (error) {
@@ -150,31 +160,82 @@ export const RegisterPage = () => {
               inputProps={{ maxLength: 50 }}
             />
           </Grid>
-
-          <Grid item xs={12} display={!!errorMessage ? '' : 'none'}>
-            <Alert severity='error'>{errorMessage}</Alert>
+          <Grid item xs={12} sx={{ mt: 2 }}>
+            <TextField
+              label="Nombre de Usuario"
+              type="text"
+              placeholder='Nombre de Usuario'
+              fullWidth
+              name="username"
+              value={username}
+              onChange={onInputChange}
+              error={!!usernameValid && formSubmitted}
+              helperText={usernameValid}
+              inputProps={{ maxLength: 20 }}
+            />
           </Grid>
 
           <Grid item xs={12} sx={{ mt: 2 }}>
-            <Button
-              disabled={isCheckingAuthentication}
-              type="submit"
-              variant='contained'
-              fullWidth>
-              Crear cuenta
-            </Button>
+            <TextField
+              label="Contraseña"
+              type="password"
+              placeholder='Contraseña'
+              fullWidth
+              name="userPassword"
+              value={userPassword}
+              onChange={onInputChange}
+              error={!!userPasswordValid && formSubmitted}
+              helperText={userPasswordValid}
+              inputProps={{ maxLength: 25 }}
+            />
           </Grid>
 
-          <Grid container direction='row' justifyContent='flex-end' sx={{ mt: 2 }}>
-            <Typography sx={{ mr: 1 }}>¿Ya tienes cuenta?</Typography>
-            <Link component={RouterLink} color='inherit' to="/auth/login">
-              ingresar
-            </Link>
+          <Grid item xs={12} sx={{ mt: 2 }}>
+            <TextField
+              label="Rol"
+              type="text"
+              placeholder='Rol'
+              fullWidth
+              name="rol"
+              value={rol}
+              onChange={onInputChange}
+              error={!!rolValid && formSubmitted}
+              helperText={rolValid}
+              inputProps={{ maxLength: 20 }}
+            />
           </Grid>
+
+          <Grid container spacing={2} sx={{ mt: 2 }}>
+            <Grid item xs={12} sm={6}>
+              <Button 
+                type="submit" 
+                variant="contained" 
+                fullWidth
+                disabled={isCheckingAuthentication}
+              >
+                Crear Cuenta
+              </Button>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Button 
+                variant="outlined" 
+                fullWidth
+                disabled={isCheckingAuthentication}
+              >
+                <RouterLink to="/auth/login">
+                  Volver al Login
+                </RouterLink>
+              </Button>
+            </Grid>
+          </Grid>
+
+          {errorMessage && (
+            <Grid item xs={12} sx={{ mt: 2 }}>
+              <Alert severity="error">{errorMessage}</Alert>
+            </Grid>
+          )}
         </Grid>
       </form>
     </AuthLayout>
   );
 };
-
-export default RegisterPage;

@@ -9,7 +9,7 @@ export const usePost = (url) => {
 
   const postData = async (body) => {
     setState({
-      ...state,
+      data: null,
       isLoading: true,
       hasError: null,
     });
@@ -29,24 +29,30 @@ export const usePost = (url) => {
       }
 
       const data = await resp.json();
-
+      
+      // Actualiza el estado con los datos obtenidos
       setState({
         data,
         isLoading: false,
         hasError: null,
       });
+
+      return data; // Retorna los datos para su uso
     } catch (error) {
+      console.error(error); // Imprime el error en la consola
       setState({
         data: null,
         isLoading: false,
         hasError: error.message,
       });
+
+      return null; // Retorna null si hubo un error
     }
   };
 
   const fetchData = async () => {
     setState({
-      ...state,
+      data: null,
       isLoading: true,
       hasError: null,
     });
@@ -65,6 +71,7 @@ export const usePost = (url) => {
         hasError: null,
       });
     } catch (error) {
+      console.error(error); // Imprime el error en la consola
       setState({
         data: null,
         isLoading: false,

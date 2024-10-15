@@ -1,67 +1,81 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import { Grid, Typography, TextField, Button, Link, Alert } from '@mui/material';
-
+import { Grid, TextField, Button, Link, Alert } from '@mui/material';
 import { AuthLayout } from '../layout/AuthLayout';
 import { useForm } from '../../hook';
-import { CheckingCredentials, login } from '../../store/auth';
+import { CheckingCredentials, login, logout } from '../../store/auth';
+import { usePost } from '../../hook'; // Asegúrate de que este hook esté correctamente implementado
 
 export const LoginPage = () => {
   const { status, errorMessage } = useSelector(state => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [localErrorMessage, setLocalErrorMessage] = useState('');
-  const { email, password, onInputChange } = useForm({
-    email: '',
+
+  const { dni, password, onInputChange } = useForm({
+    dni: '', 
     password: ''
   });
 
   const isAuthenticating = useMemo(() => status === 'checking', [status]);
 
+  const postLogin = usePost('https://localhost:7041/api/Usuarios/');
+
   const onSubmit = async (event) => {
     event.preventDefault();
 
-    // Validaciones
-    if (!email.includes('@')) {
-      setLocalErrorMessage('El correo electrónico debe contener un "@"');
+    // Validaciones básicas del formulario
+    if (dni.trim() === '' || password.trim() === '') {
+      setLocalErrorMessage('Debe completar todos los campos.');
       return;
     }
 
-    if (password.length < 6) {
-      setLocalErrorMessage('La contraseña debe tener al menos 6 caracteres');
-      return;
-    }
+    setLocalErrorMessage('');
 
-    setLocalErrorMessage(''); // Limpiar mensajes de error
-
-    // Disparar acción de checking credentials
+    // Despachar el estado de autenticación
     dispatch(CheckingCredentials());
 
-    // Simulación de la respuesta del backend
-    setTimeout(() => {
-      const mockResponse = {
-        uid: '12345',
-        email: 'user@example.com',
-        displayName: 'Usuario de Prueba',
-        photoURL: 'https://example.com/photo.jpg'
-      };
+    try {
+      // Realiza la solicitud de inicio de sesión
+      const data = await postLogin.postData({ dni, password });
+      
+      // Agrega el console.log aquí
+      console.log(data); // Verifica la estructura de la respuesta
 
-      // Aquí podrías usar el mockResponse directamente en lugar de la respuesta del fetch
+      if (!data) {
+        throw new Error('Error en la autenticación');
+      }
+
+      if (!data.activo) {
+        throw new Error('El usuario no está activo.');
+      }
+
+      // Despacha la acción de login con los datos recibidos
       dispatch(login({
-        uid: mockResponse.uid,
-        email: mockResponse.email,
-        displayName: mockResponse.displayName,
-        photoURL: mockResponse.photoURL
+        username: data.userName,   // Nombre de usuario
+        rol: data.rol,             // Rol del usuario
+        nombre: data.nombre,       // Asegúrate de que este campo esté en la respuesta
+        apellido: data.apellido,   // Asegúrate de que este campo esté en la respuesta
       }));
 
-      navigate('/dashboard'); // Nota: Corregí el nombre de la ruta a 'dashboard'
-    }, 1000); // Simula un retraso de 1 segundo
+      // Redirigir al usuario después de un inicio de sesión exitoso
+      navigate('/dashboard'); // Cambia esto a la ruta deseada
 
-    // En caso de error simulado
-    // setLocalErrorMessage('Error de simulación: Credenciales incorrectas');
-    // dispatch(logout({ errorMessage: 'Error de simulación: Credenciales incorrectas' }));
-  }
+    } catch (error) {
+      dispatch(logout({ errorMessage: error.message }));
+      setLocalErrorMessage(error.message); // Muestra el mensaje de error
+    }
+  };
+
+  // Efecto para manejar el error de autenticación
+  useEffect(() => {
+    if (status !== 'checking' && errorMessage) {
+      setLocalErrorMessage(errorMessage); // Muestra el mensaje de error
+    } else {
+      setLocalErrorMessage(''); // Limpia el mensaje si la autenticación está en proceso
+    }
+  }, [status, errorMessage]);
 
   return (
     <AuthLayout title='Login'>
@@ -69,16 +83,14 @@ export const LoginPage = () => {
         <Grid container spacing={2}>
           <Grid item xs={12} sx={{ mt: 2 }}>
             <TextField 
-              label="Correo"
-              type='email'
-              placeholder='correo@google.com'
+              label="DNI"
+              type='text'
+              placeholder='DNI'
               fullWidth
-              name='email'
-              value={email}
+              name='dni'
+              value={dni}
               onChange={onInputChange}
-              inputProps={{ 
-                maxLength: 25 
-              }}
+              inputProps={{ maxLength: 25 }}
             />
           </Grid>
 
@@ -86,14 +98,12 @@ export const LoginPage = () => {
             <TextField 
               label="Contraseña"
               type='password'
-              placeholder='contraseña'
+              placeholder='Contraseña'
               fullWidth
               name='password'
               value={password}
               onChange={onInputChange}
-              inputProps={{ 
-                maxLength: 25 
-              }}
+              inputProps={{ maxLength: 25 }}
             />
           </Grid>
 
@@ -121,7 +131,7 @@ export const LoginPage = () => {
         </Grid>
       </form>
     </AuthLayout>
-  )
-}
+  );
+};
 
 export default LoginPage;
